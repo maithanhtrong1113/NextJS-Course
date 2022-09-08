@@ -1,27 +1,41 @@
-import React, { useState } from "react";
+import React, { Fragment, useState } from "react";
+import Head from "next/head";
+import { MongoClient } from "mongodb";
 import Layout from "../components/layout/Layout";
 import MeetupList from "../components/meetups/MeetupList";
 const Home = (props) => {
-  const dump = [
-    {
-      id: 1,
-      image:
-        "https://ebudezain.com/compress/70/upload/images/image%28162%29.png?v=1.1.28",
-      title: "Anh Khang pro",
-      address: "Anh Khang pro Ninh Thuan",
-    },
-  ];
   return (
-    <Layout>
-      <MeetupList meetups={dump}></MeetupList>
-    </Layout>
+    <Fragment>
+      <Head>
+        <title>Anh Trong Pro</title>
+        <meta name="description" content="Anh Trong Pro Vip vl 0123" />
+      </Head>
+      <Layout>
+        <MeetupList meetups={props.meetups}></MeetupList>
+      </Layout>
+    </Fragment>
   );
 };
-// export function getStaticProps() {
-//   return {
-//     props: {
-//       meetups: dump,
-//     },
-//   };
-// }
+
+export async function getStaticProps() {
+  const client = await MongoClient.connect(
+    "mongodb+srv://root:root@cluster0.6llrnl4.mongodb.net/meetups?retryWrites=true&w=majority"
+  );
+  const db = client.db();
+
+  const meetupsCollection = db.collection("meetups");
+  const meetups = await meetupsCollection.find().toArray();
+  client.close();
+  return {
+    props: {
+      meetups: meetups.map((meetup) => ({
+        title: meetup.title,
+        address: meetup.address,
+        image: meetup.image,
+        id: meetup._id.toString(),
+      })),
+    },
+    revalidate: 1,
+  };
+}
 export default Home;
